@@ -1,0 +1,11 @@
+﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (IRC.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  SendRecvMsg.cpp
+SendRecvMsg.cpp(33): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+SendRecvMsg.cpp(69): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  Generating code
+  2 of 286 functions ( 0.7%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  IRC.vcxproj -> C:\Storey\PSU\001-Spring_2021\594_Internetworking Protocols\Final Project\IRC\x64\Release\IRC_Client.exe
+  IRC.vcxproj -> C:\Storey\PSU\001-Spring_2021\594_Internetworking Protocols\Final Project\IRC\x64\Release\IRC_Client.pdb (Full PDB)

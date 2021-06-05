@@ -1,0 +1,17 @@
+﻿  server.cpp
+server.cpp(80): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+server.cpp(85): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+server.cpp(95): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+server.cpp(106): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+server.cpp(121): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+server.cpp(161): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+server.cpp(41): warning C4101: 'iSendResult': unreferenced local variable
+server.cpp(211): warning C4101: 'recvbuf': unreferenced local variable
+server.cpp(210): warning C4101: 'iSendResult': unreferenced local variable
+  Generating code
+  2 of 882 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  IRC_Server.vcxproj -> C:\Storey\PSU\001-Spring_2021\594_Internetworking Protocols\Final Project\IRC\x64\Release\IRC_Server.exe
+  IRC_Server.vcxproj -> C:\Storey\PSU\001-Spring_2021\594_Internetworking Protocols\Final Project\IRC\x64\Release\IRC_Server.pdb (Full PDB)
