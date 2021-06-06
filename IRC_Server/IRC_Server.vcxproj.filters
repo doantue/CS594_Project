@@ -24,12 +24,18 @@
     <ClCompile Include="StringProcess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ProcessData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProcessMsg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StringProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

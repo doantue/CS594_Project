@@ -20,12 +20,12 @@ int SendRecvMsg::receive() {
 
 	int iResult;
 	char payload[DEFAULT_BUFLEN];
-	iResult = recv(*_clientSock, payload, _payloadLength, 0);
-	std::cout << "iResult :" << iResult << std::endl;
+	iResult = recv(*_clientSock, payload, DEFAULT_BUFLEN, 0);
+	//std::cout << "iResult :" << iResult << std::endl;
 	if (iResult > 0) {
-		std::cout << "========= New Request =========" << std::endl;
+		//std::cout << "========= New Response =========" << std::endl;
 		std::string str(payload);
-		_payload = str;
+		_payload = str.substr(0,_payloadLength);
 	}
 	else if (iResult == 0) {
 		std::cout << "Connection closed." << std::endl;
@@ -35,7 +35,7 @@ int SendRecvMsg::receive() {
 		std::cout << "recv failed with error: " << WSAGetLastError() << std::endl;
 		return 1;
 	}
-	return iResult;
+	return 0;
 }
 
 int SendRecvMsg::sendMsg() {

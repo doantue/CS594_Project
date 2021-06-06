@@ -22,7 +22,11 @@
 #pragma comment (lib, "Ws2_32.lib")
 #pragma once
 // Define global variables
+//map a user to a session
+std::unordered_map<std::string, ProcessMsg*> userSessions;
+//map a user to many rooms
 std::unordered_map<std::string, std::unordered_set<std::string>> clients;
+//map a room to many users
 std::unordered_map<std::string, std::unordered_set<std::string>> rooms;
 
 unsigned __stdcall ClientSession(void *data)
@@ -34,58 +38,49 @@ unsigned __stdcall ClientSession(void *data)
 	if (getpeername(ClientSocket, (struct sockaddr *)&clientAddr, &slen) == 0) {
 		char str[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddr.sin_addr, str, INET_ADDRSTRLEN);
-		printf("client IP: %s\n", str);
+		cout << "Client IP: " << str << endl;
 	}
 	// Process the client.
 	int iResult;
 	int iSendResult;
 	char recvbuf[DEFAULT_BUFLEN];
 	int recvbuflen = DEFAULT_BUFLEN;
+	string user = "";
+	ProcessMsg prObj;
+	prObj._clientSock = &ClientSocket;
+
 	do {
-		
-		iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-		if (iResult > 0) {
-			std::cout << "========= New Request =========" << std::endl;
-		}
-		else if (iResult == 0)
-			printf("Connection closing...\n");
-		else {
-			printf("recv failed with error: %d\n", WSAGetLastError());
+		if (prObj.receiveMsg()) {
+			//How to clear user?
 			closesocket(ClientSocket);
-			WSACleanup();
+			cout << "Connection error." << endl;
 			return 1;
 		}
-		
-		ProcessMsg prObj;
-		prObj._clientSock = &ClientSocket;
-		// Extract command
-		std::string rawdata(recvbuf);
-		std::string cmd = rawdata.substr(0, 3);
-		std::cout << "Command: " << cmd << std::endl;
-		// Extract user
-		std::size_t posSpace = rawdata.find(' ');
-		std::string user = "";
-		if (posSpace != std::string::npos) {
-			user = rawdata.substr(4, posSpace - 4);
-		}
-		std::cout << "User: " << user << std::endl;
-		if (clients.find(user) == clients.end()) {
-			clients.insert({ user, {} });
-		}
-		
+		string rawdata = prObj._payload;
+		auto ctrldata = StringProcess::parseCmdUser(rawdata);
+		cout << "Command, User: " << ctrldata.first << " " << ctrldata.second << endl;
+		string cmd = ctrldata.first;
+		user = ctrldata.second;
 		if (cmd == CONNECT_REQ) {
-			std::string strsend = CONNECT_RES "@" + user + " ";
-			const char* sendbuf = strsend.c_str();
-			prObj._payload = sendbuf;
-			prObj._payloadLength = strsend.size();
-			if (prObj.sendMsg() == 1) break;
-			std::cout << "Send to client: " << strsend << std::endl;
+			//Check duplicate user
+			if (userSessions.find(user) != userSessions.end()) {
+				if (prObj.sendErrorRes(user, ERR_USER_EXIST)) return 1;
+			}
+			else {
+				std::string strsend = CONNECT_RES "@" + user + " ";
+				const char* sendbuf = strsend.c_str();
+				prObj._payload = sendbuf;
+				prObj._payloadLength = strsend.size();
+				if (prObj.sendMsg() == 1) return 1;
+				//Store user info
+				userSessions[user] = &prObj;
+			}
 		}
 		else if (cmd == CREATE_ROOM_REQ) {
 			int headLen = user.size() + 5;
 			std::string params = rawdata.substr(headLen);
-			posSpace = params.find(' ');
-			const std::string roomName = params.substr(0, posSpace);
+			int posSpace = params.find(' ');
+			std::string roomName = params.substr(0, posSpace);
 			// Room name invalid
 			if (rooms.find(roomName) != rooms.end()) {
 				std::string strsend = ERROR_RES "@" + user + " " ERR_ROOM_EXIST;
@@ -97,8 +92,13 @@ unsigned __stdcall ClientSession(void *data)
 				std::cout << "Send error code to client: " << ERR_ROOM_INV << std::endl;
 			}
 			else {
-				rooms[roomName] = {user};
-				clients[user].insert(roomName);
+				rooms.insert({ roomName,{user} });
+				if (clients.find(user) == clients.end()) {
+					clients.insert({ user, {roomName} });
+				}
+				else {
+					clients[user].insert(roomName);
+				}
 				std::cout << "Room name: " << roomName << std::endl;
 				std::string strsend = SUCCESS_RES "@" + user + " ";
 				const char* sendbuf = strsend.c_str();
@@ -126,7 +126,6 @@ unsigned __stdcall ClientSession(void *data)
 			vector<string> param = StringProcess::parseParams(rawdata, user, 1);
 			if (param.size() > 0) {
 				string jname = param[0];
-				cout << jname << " " <<jname.size() << endl;
 				if (rooms.find(jname) != rooms.end()) {
 					rooms[jname].insert(user);
 					clients[user].insert(jname);
@@ -141,7 +140,21 @@ unsigned __stdcall ClientSession(void *data)
 			}
 		}
 		else if (cmd == LEAVE_ROOM_REQ) {
-
+			vector<string> param = StringProcess::parseParams(rawdata, user, 1);
+			if (param.size() > 0) {
+				string lrname = param[0];
+				if (rooms.find(lrname) != rooms.end()) {
+					rooms[lrname].erase(user);
+					clients[user].erase(lrname);
+					prObj.sendSuccessRes(user);
+				}
+				else {
+					prObj.sendErrorRes(user, ERR_ROOM_N_EXIST);
+				}
+			}
+			else {
+				prObj.sendErrorRes(user, ERR_DATA_CORRUPT);
+			}
 		}
 		else if (cmd == LIST_MEMBER_REQ) {
 			vector<string> param = StringProcess::parseParams(rawdata, user, 1);
@@ -171,10 +184,30 @@ unsigned __stdcall ClientSession(void *data)
 			}
 		}
 		else if (cmd == SEND_MSG_REQ) {
-
+			vector<string> data = StringProcess::parseList(rawdata, user);
+			if (data.size() > 0) {
+				string content = data[data.size() - 1];
+				for (int i = 0; i < data.size() - 1; i++) {
+					string room = data[i];
+					unordered_set<string> usrList = rooms[room];
+					for (auto it = usrList.begin(); it != usrList.end(); it++) {
+						ProcessMsg* pm = userSessions[*it];
+						string strsend = SEND_MSG_RES "@" + user + " " + room + " " + content + " ";
+						cout << "send to user: " << strsend << endl;
+						pm->_payload = strsend;
+						pm->sendMsg();
+					}
+					
+				}
+				prObj.sendSuccessRes(user);
+			}
+			else {
+				prObj.sendErrorRes(user, ERR_DATA_CORRUPT);
+			}
 		}
 		else if (cmd == DISCONNECT_REQ) {
 			clients.erase(user);
+			userSessions.erase(user);
 			for (auto it = rooms.begin(); it != rooms.end(); it++) {
 				if (it->second.find(user) != it->second.end()) {
 					it->second.erase(user);
@@ -186,10 +219,10 @@ unsigned __stdcall ClientSession(void *data)
 			return 0;
 		}
 		else if (cmd == HEARTBEAT_REQ) {
-
 		}
-		std::cout << "Number of connections: " << clients.size() << std::endl;
-	} while (iResult > 0);
+		std::cout << "Number of connections: " << userSessions.size() << std::endl;
+	} while (1);
+	
 	return 0;
 }
 

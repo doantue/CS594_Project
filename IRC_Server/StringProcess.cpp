@@ -1,6 +1,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <unordered_map>
+#include <unordered_set>
 #include "StringProcess.h"
 
 
@@ -29,7 +31,7 @@ vector<string> StringProcess::parseList(string& data, string& user) {
 	string numstr = data.substr(pos, 3);
 	int num = stoi(numstr);
 	string list = data.substr(pos + 4);
-	for (auto i = 0; i < num; i++) {
+	for (auto i = 0; i < num-1; i++) {
 		auto posSpace = list.find(' ');
 		if (posSpace != string::npos) {
 			ret.push_back(list.substr(0, posSpace));
@@ -37,6 +39,7 @@ vector<string> StringProcess::parseList(string& data, string& user) {
 		}
 		else break;
 	}
+	ret.push_back(list);
 	return ret;
 }
 
@@ -45,16 +48,26 @@ vector<string> StringProcess::parseParams(string& data, string& user, int numPar
 	int pos = user.size() + 5; // user length + 3 command code + @ + " "
 							   //cout << data << " " << data.size() << endl;
 	string list = data.substr(pos);
-	//cout << list << endl;
-	for (auto i = 0; i < numParams; i++) {
+	if (numParams == 1) {
 		auto posSpace = list.find(' ');
 		if (posSpace != string::npos) {
 			ret.push_back(list.substr(0, posSpace));
-			if (posSpace >= list.size()) break;
-			list = list.substr(posSpace + 1);
 		}
-		else break;
 	}
+	else {
+		//cout << list << endl;
+		for (auto i = 0; i < numParams - 1; i++) {
+			auto posSpace = list.find(' ');
+			if (posSpace != string::npos) {
+				ret.push_back(list.substr(0, posSpace));
+				if (posSpace >= list.size()) break;
+				list = list.substr(posSpace + 1);
+			}
+			else break;
+		}
+		if (list.size() > 0) ret.push_back(list);
+	}
+	
 	return ret;
 }
 
@@ -74,4 +87,14 @@ pair<int, string> StringProcess::validateName(string& name) {
 		ret.second = "Name is not longer than 20 characters.";
 	}
 	return ret;
+}
+
+void StringProcess::printMap(unordered_map<string, unordered_set<string>> m) {
+	for (auto it = m.begin(); it != m.end(); it++) {
+		cout << it->first;
+		for (auto it1 = it->second.begin(); it1 != it->second.end(); it1++) {
+			cout << *it1;
+		}
+		cout << endl;
+	}
 }

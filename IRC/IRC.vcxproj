@@ -112,11 +112,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="client.cpp" />
+    <ClCompile Include="HandleMessages.cpp" />
+    <ClCompile Include="MessageStorage.cpp" />
     <ClCompile Include="SendRecvMsg.cpp" />
     <ClCompile Include="SharedTask.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h" />
+    <ClInclude Include="HandleMessages.h" />
+    <ClInclude Include="MessageStorage.h" />
     <ClInclude Include="SendRecvMsg.h" />
     <ClInclude Include="SharedTask.h" />
   </ItemGroup>

@@ -112,11 +112,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ProcessData.cpp" />
     <ClCompile Include="ProcessMsg.cpp" />
     <ClCompile Include="server.cpp" />
     <ClCompile Include="StringProcess.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ProcessData.h" />
     <ClInclude Include="ProcessMsg.h" />
     <ClInclude Include="StringProcess.h" />
   </ItemGroup>

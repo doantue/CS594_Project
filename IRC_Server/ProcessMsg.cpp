@@ -19,21 +19,22 @@ ProcessMsg::~ProcessMsg()
 int ProcessMsg::receiveMsg() {
 	int iResult;
 	char payload[DEFAULT_BUFLEN];
-	iResult = recv(*_clientSock, payload, _payloadLength, 0);
+	iResult = recv(*_clientSock, payload, DEFAULT_BUFLEN, 0);
 	if (iResult > 0) {
 		std::cout << "========= New Request =========" << std::endl;
 		std::string str(payload);
 		_payload = str;
+		//_payload = str.substr(0,_payloadLength);
 	}
 	else if (iResult == 0) {
 		std::cout << "Connection closed." << std::endl;
-		return 0;
+		return 1;
 	}
 	else {
 		std::cout << "recv failed with error: " << WSAGetLastError() << std::endl;
-		return 0;
+		return 1;
 	}
-	return iResult;
+	return 0;
 }
 
 int ProcessMsg::sendMsg() {

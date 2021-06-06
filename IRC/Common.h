@@ -7,6 +7,7 @@
 #define ERR_CODE_LENGTH  4
 #define NUM_LIST_LENGTH  3
 #define PAYLOAD_LENGTH   4
+#define MSG_RECV_TIMEOUT 10
 #define ERROR_RES        "001"
 #define LIST_ROOMS_RES   "002"
 #define LIST_MEMBERS_RES "003"
@@ -24,6 +25,9 @@
 #define DISCONNECT_REQ   "108"
 #define HEARTBEAT_REQ    "109"
 
+#define ERR_USER_EXIST   "0001"
+#define ERR_USER_N_EXIST "0002"
+#define ERR_USER_INV     "0003"
 #define ERR_ROOM_EXIST   "0011"
 #define ERR_ROOM_N_EXIST "0012"
 #define ERR_ROOM_INV     "0013"
