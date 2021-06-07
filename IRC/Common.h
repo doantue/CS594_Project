@@ -3,11 +3,12 @@
 
 #define DEFAULT_BUFLEN   512
 #define DEFAULT_PORT     "27015"
-#define COMMAND_LENGTH   3
-#define ERR_CODE_LENGTH  4
-#define NUM_LIST_LENGTH  3
-#define PAYLOAD_LENGTH   4
-#define MSG_RECV_TIMEOUT 10
+#define COMMAND_LENGTH_DIGIT   3
+#define ERR_CODE_LENGTH_DIGIT  4
+#define NUM_LIST_LENGTH_DIGIT  3
+#define PAYLOAD_LENGTH_DIGIT   4
+#define MSG_RECV_TIMEOUT       10
+#define MESSAGE_DELIMITER  " "
 #define ERROR_RES        "001"
 #define LIST_ROOMS_RES   "002"
 #define LIST_MEMBERS_RES "003"

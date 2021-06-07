@@ -25,7 +25,8 @@ int SendRecvMsg::receive() {
 	if (iResult > 0) {
 		//std::cout << "========= New Response =========" << std::endl;
 		std::string str(payload);
-		_payload = str.substr(0,_payloadLength);
+		//_payload = str.substr(0,_payloadLength);
+		_payload = str;
 	}
 	else if (iResult == 0) {
 		std::cout << "Connection closed." << std::endl;

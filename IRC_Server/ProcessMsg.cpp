@@ -5,6 +5,7 @@
 #include <iostream>
 #include "../IRC/Common.h"
 #include "ProcessMsg.h"
+#include "StringProcess.h"
 
 
 
@@ -54,6 +55,8 @@ int ProcessMsg::sendMsg() {
 
 int ProcessMsg::sendSuccessRes(std::string& user) {
 	std::string str = SUCCESS_RES "@" + user + " ";
+	int len = str.size() + PAYLOAD_LENGTH_DIGIT + 1;
+	str = str + StringProcess::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " ";
 	const char* sendbuf = str.c_str();
 	int iResult  = send(*_clientSock, sendbuf, str.size(), 0);
 	if (iResult == SOCKET_ERROR) {
@@ -61,11 +64,14 @@ int ProcessMsg::sendSuccessRes(std::string& user) {
 		closesocket(*_clientSock);
 		return 1;
 	}
+	std::cout << "Send to client: " << str << std::endl;
 	return 0;
 }
 
 int ProcessMsg::sendErrorRes(std::string& user, std::string code) {
-	std::string str = ERROR_RES "@" + user + " " + code;
+	std::string str = ERROR_RES "@" + user + " " ;
+	int len = str.size() + PAYLOAD_LENGTH_DIGIT + 1 + ERR_CODE_LENGTH_DIGIT + 1;
+	str = str + StringProcess::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + code + " ";
 	const char* sendbuf = str.c_str();
 	int iResult = send(*_clientSock, sendbuf, str.size(), 0);
 	if (iResult == SOCKET_ERROR) {
@@ -73,5 +79,6 @@ int ProcessMsg::sendErrorRes(std::string& user, std::string code) {
 		closesocket(*_clientSock);
 		return 1;
 	}
+	std::cout << "Send to client: " << str << std::endl;
 	return 0;
 }

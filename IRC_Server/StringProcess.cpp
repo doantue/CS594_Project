@@ -1,9 +1,8 @@
-#include <string>
-#include <vector>
 #include <iostream>
-#include <unordered_map>
-#include <unordered_set>
+#include <sstream>
+#include <iomanip>
 #include "StringProcess.h"
+#include "../IRC/Common.h"
 
 
 
@@ -15,22 +14,25 @@ StringProcess::StringProcess()
 StringProcess::~StringProcess()
 {
 }
-pair<string, string> StringProcess::parseCmdUser(string& data) {
-	string cmd = data.substr(0, 3);
+vector<string> StringProcess::parseCmdUser(string& data) {
+	string cmd = data.substr(0, COMMAND_LENGTH_DIGIT);
 	size_t posSpace = data.find(' ');
 	string user = "";
+	string len = "";
 	if (posSpace != string::npos) {
-		user = data.substr(4, posSpace - 4);
+		user = data.substr(COMMAND_LENGTH_DIGIT + 1, posSpace - (COMMAND_LENGTH_DIGIT + 1));
+		int posLen = COMMAND_LENGTH_DIGIT + 1 + user.size() + 1;
+		len = data.substr(posLen, PAYLOAD_LENGTH_DIGIT);
 	}
-	return{ cmd, user };
+	return{ cmd, user, len };
 }
 
 vector<string> StringProcess::parseList(string& data, string& user) {
 	vector<string> ret;
-	int pos = user.size() + 5; // user length + 3 command code + @ + " "
-	string numstr = data.substr(pos, 3);
+	int pos = user.size() + COMMAND_LENGTH_DIGIT + PAYLOAD_LENGTH_DIGIT + 3; // user length + 3 command code + @ + " "
+	string numstr = data.substr(pos, NUM_LIST_LENGTH_DIGIT);
 	int num = stoi(numstr);
-	string list = data.substr(pos + 4);
+	string list = data.substr(pos + NUM_LIST_LENGTH_DIGIT + 1);
 	for (auto i = 0; i < num-1; i++) {
 		auto posSpace = list.find(' ');
 		if (posSpace != string::npos) {
@@ -45,8 +47,8 @@ vector<string> StringProcess::parseList(string& data, string& user) {
 
 vector<string> StringProcess::parseParams(string& data, string& user, int numParams) {
 	vector<string> ret;
-	int pos = user.size() + 5; // user length + 3 command code + @ + " "
-							   //cout << data << " " << data.size() << endl;
+	int pos = user.size() + COMMAND_LENGTH_DIGIT + PAYLOAD_LENGTH_DIGIT + 3; // user length + 3 command code + @ + " "
+	//cout << data << " " << data.size() << endl;
 	string list = data.substr(pos);
 	if (numParams == 1) {
 		auto posSpace = list.find(' ');
@@ -97,4 +99,10 @@ void StringProcess::printMap(unordered_map<string, unordered_set<string>> m) {
 		}
 		cout << endl;
 	}
+}
+
+string StringProcess::intToStr(int num, int paddingLength) {
+	stringstream sstr;
+	sstr << std::setw(paddingLength) << std::setfill('0') << num;
+	return sstr.str();
 }

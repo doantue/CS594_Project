@@ -56,11 +56,14 @@ unsigned __stdcall ClientSession(void *data)
 			cout << "Connection error." << endl;
 			return 1;
 		}
-		string rawdata = prObj._payload;
-		auto ctrldata = StringProcess::parseCmdUser(rawdata);
-		cout << "Command, User: " << ctrldata.first << " " << ctrldata.second << endl;
-		string cmd = ctrldata.first;
-		user = ctrldata.second;
+		string payload = prObj._payload;
+		auto ctrldata = StringProcess::parseCmdUser(payload);
+		//cout << "Command, User, Length: " << ctrldata[0] << " " << ctrldata[1] << " "<< ctrldata[2] << endl;
+		string cmd = ctrldata[0];
+		user = ctrldata[1];
+		int msgLength = stoi(ctrldata[2]);
+		string rawdata = payload.substr(0, msgLength);
+		cout << "Message received: " << rawdata << endl;
 		if (cmd == CONNECT_REQ) {
 			//Check duplicate user
 			if (userSessions.find(user) != userSessions.end()) {
@@ -68,6 +71,8 @@ unsigned __stdcall ClientSession(void *data)
 			}
 			else {
 				std::string strsend = CONNECT_RES "@" + user + " ";
+				int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1;
+				strsend = strsend + StringProcess::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " ";
 				const char* sendbuf = strsend.c_str();
 				prObj._payload = sendbuf;
 				prObj._payloadLength = strsend.size();
@@ -77,19 +82,17 @@ unsigned __stdcall ClientSession(void *data)
 			}
 		}
 		else if (cmd == CREATE_ROOM_REQ) {
+			/*
 			int headLen = user.size() + 5;
 			std::string params = rawdata.substr(headLen);
 			int posSpace = params.find(' ');
 			std::string roomName = params.substr(0, posSpace);
-			// Room name invalid
+			*/
+			vector<string> params = StringProcess::parseParams(rawdata, user, 1);
+			string roomName = params[0];
+			// Room name existed.
 			if (rooms.find(roomName) != rooms.end()) {
-				std::string strsend = ERROR_RES "@" + user + " " ERR_ROOM_EXIST;
-				strsend += " ";
-				const char* sendbuf = strsend.c_str();
-				prObj._payload = sendbuf;
-				prObj._payloadLength = strsend.size();
-				if (prObj.sendMsg() == 1) break;
-				std::cout << "Send error code to client: " << ERR_ROOM_INV << std::endl;
+				prObj.sendErrorRes(user, ERR_ROOM_EXIST);
 			}
 			else {
 				rooms.insert({ roomName,{user} });
@@ -99,23 +102,19 @@ unsigned __stdcall ClientSession(void *data)
 				else {
 					clients[user].insert(roomName);
 				}
-				std::cout << "Room name: " << roomName << std::endl;
-				std::string strsend = SUCCESS_RES "@" + user + " ";
-				const char* sendbuf = strsend.c_str();
-				prObj._payload = sendbuf;
-				prObj._payloadLength = strsend.size();
-				if (prObj.sendMsg() == 1) break;
-				std::cout << "Send to client: " << strsend << std::endl;
+				prObj.sendSuccessRes(user);
 			}
 		}
 		else if (cmd == LIST_ROOM_REQ) {
-			std::stringstream sstr;
-			sstr << std::setw(NUM_LIST_LENGTH) << std::setfill('0') << rooms.size();
-			std::string numRooms = sstr.str();
-			std::string strsend = LIST_ROOMS_RES "@" + user + " " + numRooms + " ";
+			string numRooms = StringProcess::intToStr(rooms.size(), NUM_LIST_LENGTH_DIGIT);
+			string strsend = LIST_ROOMS_RES "@" + user + " ";
+			string roomList = "";
 			for (auto it = rooms.begin(); it != rooms.end(); it++) {
-				strsend = strsend + it->first + " ";
+				roomList = roomList + it->first + " ";
 			}
+			string lstr = numRooms + " " + roomList;
+			int len = strsend.size() + lstr.size() + PAYLOAD_LENGTH_DIGIT + 1;
+			strsend = strsend + StringProcess::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + lstr;
 			const char* sendbuf = strsend.c_str();
 			prObj._payload = sendbuf;
 			prObj._payloadLength = strsend.size();
@@ -161,14 +160,16 @@ unsigned __stdcall ClientSession(void *data)
 			if (param.size() > 0) {
 				string lname = param[0];
 				if (rooms.find(lname) != rooms.end()) {
-					std::stringstream sstr;
-					sstr << std::setw(NUM_LIST_LENGTH) << std::setfill('0') << rooms[lname].size();
-					std::string numUsers = sstr.str();
-					std::string strsend = LIST_MEMBERS_RES "@" + user + " " + numUsers + " ";
+					string numUsers = StringProcess::intToStr(rooms[lname].size(), NUM_LIST_LENGTH_DIGIT);
+					string strsend = LIST_MEMBERS_RES "@" + user + " ";
 					auto memList = rooms[lname];
+					string memStr = "";
 					for (auto it = memList.begin(); it != memList.end(); it++) {
-						strsend = strsend + *it + " ";
+						memStr = memStr + *it + " ";
 					}
+					string lstr = numUsers + " " + memStr + " ";
+					int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1 + lstr.size();
+					strsend = strsend + StringProcess::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + lstr;
 					const char* sendbuf = strsend.c_str();
 					prObj._payload = sendbuf;
 					prObj._payloadLength = strsend.size();
@@ -192,10 +193,13 @@ unsigned __stdcall ClientSession(void *data)
 					unordered_set<string> usrList = rooms[room];
 					for (auto it = usrList.begin(); it != usrList.end(); it++) {
 						ProcessMsg* pm = userSessions[*it];
-						string strsend = SEND_MSG_RES "@" + user + " " + room + " " + content + " ";
-						cout << "send to user: " << strsend << endl;
+						string strsend = SEND_MSG_RES "@" + user + " ";
+						string lstr = room + " " + content + " ";
+						int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1 + lstr.size();
+						strsend = strsend + StringProcess::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + lstr;
 						pm->_payload = strsend;
 						pm->sendMsg();
+						cout << "send to user: " << strsend << endl;
 					}
 					
 				}

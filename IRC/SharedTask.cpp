@@ -3,6 +3,9 @@
 #include <iostream>
 #include <queue>
 #include <thread>
+#include <sstream>
+#include <iomanip>
+#include "Common.h"
 #include "SharedTask.h"
 
 
@@ -16,22 +19,25 @@ SharedTask::~SharedTask()
 {
 }
 
-pair<string, string> SharedTask::parseCmdUser(string& data) {
-	string cmd = data.substr(0, 3);
+vector<string> SharedTask::parseCmdUser(string& data) {
+	string cmd = data.substr(0, COMMAND_LENGTH_DIGIT);
 	size_t posSpace = data.find(' ');
 	string user = "";
+	string len = "";
 	if (posSpace != string::npos) {
-		user = data.substr(4, posSpace - 4);
+		user = data.substr(COMMAND_LENGTH_DIGIT + 1, posSpace - (COMMAND_LENGTH_DIGIT + 1));
+		int posLen = COMMAND_LENGTH_DIGIT + 1 + user.size() + 1;
+		len = data.substr(posLen, PAYLOAD_LENGTH_DIGIT);
 	}
-	return{ cmd, user };
+	return{ cmd, user, len };
 }
 
 vector<string> SharedTask::parseList(string& data, string& user) {
 	vector<string> ret;
-	int pos = user.size() + 5; // user length + 3 command code + @ + " "
-	string numstr = data.substr(pos, 3);
+	int pos = user.size() + COMMAND_LENGTH_DIGIT + PAYLOAD_LENGTH_DIGIT + 3; // 3:  @ + " " + " "
+	string numstr = data.substr(pos, NUM_LIST_LENGTH_DIGIT);
 	int num = stoi(numstr);
-	string list = data.substr(pos+4);
+	string list = data.substr(pos + NUM_LIST_LENGTH_DIGIT + 1);
 	for (auto i = 0; i < num; i++) {
 		auto posSpace = list.find(' ');
 		if (posSpace != string::npos) {
@@ -45,7 +51,7 @@ vector<string> SharedTask::parseList(string& data, string& user) {
 
 vector<string> SharedTask::parseParams(string& data, string& user, int numParams) {
 	vector<string> ret;
-	int pos = user.size() + 5; // user length + 3 command code + @ + " "
+	int pos = user.size() + COMMAND_LENGTH_DIGIT + PAYLOAD_LENGTH_DIGIT + 3; // user length + 3 command code + @ + " "
 	//cout << data << " " << data.size() << endl;
 	string list = data.substr(pos);
 	if (numParams == 1) {
@@ -92,7 +98,7 @@ pair<int, string> SharedTask::validateRoomList(string rooms, vector<string> room
 	pair<int, string> ret = { 0, "" };
 	int maxRoom = roomlist.size();
 	string list = "";
-	string delimiter = " ";
+	string delimiter = MESSAGE_DELIMITER;
 	size_t pos = 0;
 	string roomNum;
 	while ((pos = rooms.find(delimiter)) != string::npos) {
@@ -100,7 +106,7 @@ pair<int, string> SharedTask::validateRoomList(string rooms, vector<string> room
 		//std::cout << token << std::endl;
 		int num = stoi(roomNum);
 		if (num <= maxRoom && num > 0) {
-			list += roomlist[num-1];
+			list += (roomlist[num-1] + delimiter);
 			ret.first++;
 		}
 		else {
@@ -131,4 +137,10 @@ bool SharedTask::checkQueue(queue<pair<string, string>>* buf, int waitTime) {
 		this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 	return false;
+}
+
+string SharedTask::intToStr(int num, int paddingLength) {
+	stringstream sstr;
+	sstr << std::setw(paddingLength) << std::setfill('0') << num;
+	return sstr.str();
 }

@@ -33,6 +33,7 @@ int HandleMessages::execute() {
 	int recvbuflen = DEFAULT_BUFLEN;
 	while (1) {
 		int iResult;
+		cout << endl;
 		std::cout << " 1. Create a room." << std::endl;
 		std::cout << " 2. List all rooms." << std::endl;
 		std::cout << " 3. Join a room." << std::endl;
@@ -77,7 +78,10 @@ int HandleMessages::execute() {
 			break;
 		}
 		case 7: {
-			srObj->_payload = DISCONNECT_REQ "@" + username + " ";
+			string strsend = DISCONNECT_REQ "@" + username + " ";
+			int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1;
+			strsend = strsend + SharedTask::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " ";
+			srObj->_payload = strsend;
 			srObj->_payloadLength = srObj->_payload.size();
 			srObj->sendMsg();
 			//shutdown the connection since no more data will be sent
@@ -107,7 +111,11 @@ void HandleMessages::createRoom() {
 		std::cout << "===> ERROR: " << result.second << std::endl;
 		roomName = "";
 	} while (1);
-	srObj->_payload = CREATE_ROOM_REQ "@" + username + " " + roomName + " ";
+	string strsend = CREATE_ROOM_REQ "@" + username + " ";
+	string rstr = roomName + " ";
+	int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1 + rstr.size();
+	strsend = strsend + SharedTask::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + rstr;
+	srObj->_payload = strsend;
 	srObj->_payloadLength = srObj->_payload.size();
 	srObj->sendMsg();
 	//Timeout receive msg
@@ -127,7 +135,10 @@ void HandleMessages::createRoom() {
 }
 
 pair<int, vector<string>> HandleMessages::listRoom() {
-	srObj->_payload = LIST_ROOM_REQ "@" + username + " ";
+	string strsend = LIST_ROOM_REQ "@" + username + " ";
+	int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1;
+	strsend = strsend + SharedTask::intToStr(len, PAYLOAD_LENGTH_DIGIT);
+	srObj->_payload = strsend;
 	srObj->_payloadLength = srObj->_payload.size();
 	srObj->sendMsg();
 	if (SharedTask::checkQueue(&storage->msgBuf, MSG_RECV_TIMEOUT)) {
@@ -156,7 +167,11 @@ void HandleMessages::joinRoom() {
 		std::cout << "===> ERROR: " << result.second << std::endl;
 		roomName = "";
 	} while (1);
-	srObj->_payload = JOIN_ROOM_REQ "@" + username + " " + roomName + " ";
+	string strsend = JOIN_ROOM_REQ "@" + username + " ";
+	string rstr = roomName + " ";
+	int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1 + rstr.size();
+	strsend = strsend + SharedTask::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + rstr;
+	srObj->_payload = strsend;
 	srObj->_payloadLength = srObj->_payload.size();
 	srObj->sendMsg();
 	if (SharedTask::checkQueue(&storage->msgBuf, MSG_RECV_TIMEOUT)) {
@@ -190,9 +205,6 @@ void HandleMessages::sendMessage() {
 			}
 		}
 	}
-	
-
-		
 	string rooms;
 	static pair<int, string> result;
 	do {
@@ -209,10 +221,12 @@ void HandleMessages::sendMessage() {
 	string content = "";
 	cout << ">>> Message content: ";
 	std::getline(std::cin, content, '\n');
-	stringstream sstr;
-	sstr << std::setw(NUM_LIST_LENGTH) << std::setfill('0') << ++result.first;
-	std::string numRooms = sstr.str();
-	srObj->_payload = SEND_MSG_REQ "@" + username + " " + numRooms + " " + rooms + " " + content + " ";
+	std::string numRooms = SharedTask::intToStr(++result.first, NUM_LIST_LENGTH_DIGIT);
+	string strsend = SEND_MSG_REQ "@" + username + " ";
+	string rstr = numRooms + " " + rooms + " " + content + " ";
+	int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1 + rstr.size();
+	strsend = strsend + SharedTask::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + rstr;
+	srObj->_payload = strsend;
 	srObj->_payloadLength = srObj->_payload.size();
 	srObj->sendMsg();
 	if (SharedTask::checkQueue(&storage->msgBuf, MSG_RECV_TIMEOUT)) {
@@ -240,7 +254,11 @@ void HandleMessages::listMembers() {
 		std::cout << "===> ERROR: " << result.second << std::endl;
 		roomName = "";
 	} while (1);
-	srObj->_payload = LIST_MEMBER_REQ "@" + username + " " + roomName + " ";
+	string strsend = LIST_MEMBER_REQ "@" + username + " ";
+	string rstr = roomName + " ";
+	int len = strsend.size() + PAYLOAD_LENGTH_DIGIT + 1 + rstr.size();
+	strsend = strsend + SharedTask::intToStr(len, PAYLOAD_LENGTH_DIGIT) + " " + rstr;
+	srObj->_payload = strsend;
 	srObj->_payloadLength = srObj->_payload.size();
 	srObj->sendMsg();
 	if (SharedTask::checkQueue(&storage->msgBuf, MSG_RECV_TIMEOUT)) {
@@ -254,10 +272,8 @@ void HandleMessages::listMembers() {
 			}
 		}
 		else {
-			vector<string> param = SharedTask::parseParams(srObj->_payload, username, 1);
-			if (param.size() > 0) {
-				cout << "====> ERROR, code: " << param[0] << endl;
-			}
+			vector<string> codes = SharedTask::parseParams(data.second, username, 1);
+			std::cout << "===> ERROR, code: " << codes[0] << std::endl;
 		}
 	}
 	else {
